@@ -1,10 +1,21 @@
 ## Get the NCBI PubMed baseline file
 
-In `project/plant_sci_history/1_obtaining_corpus`:
+In `project/plant_sci_history/1_obtaining_corpus/pubmed`:
+- Downloaded on 11/11/21. 
 
 ```
 wget -r ftp://ftp.ncbi.nlm.nih.gov/pubmed/baseline/*
 ```
+
+## Get the NCBI taxonomy file
+
+In `project/plant_sci_history/1_obtaining_corpus/taxonomy`:
+- File date: 11/11/21
+
+```
+wget https://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz
+```
+
 
 ## Be familiar with Pubmed XML
 
