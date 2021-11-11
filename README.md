@@ -1,2 +1,4 @@
-# Plant_science_history
- For dissecting major conceptual shifts in plant science
+# Plant science history
+
+For dissecting major conceptual shifts in plant science
+
