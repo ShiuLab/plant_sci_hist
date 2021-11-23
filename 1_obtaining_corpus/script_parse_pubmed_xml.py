@@ -137,6 +137,13 @@ def parse_xml(xml_path, pnames, out_log, debug=0):
             flag_PMID = 1
             if debug:
                 print("-->",PMID)
+            # This record lead to an infinite loop in get_value()
+            #if PMID == "32271890": 
+            #    debug = 1
+            #    print(PMID)
+            #else:
+            #    debug = 0
+            
             if PMID not in pubmed_d:
                 pubmed_d[PMID] = ["","","","","","",""]
             else:
@@ -154,6 +161,8 @@ def parse_xml(xml_path, pnames, out_log, debug=0):
             # have an inner loop till the end tag is found
             L = input_obj.readline()
             while L != "":
+                #if debug:
+                #    print("here")
                 L = L.strip()
                 if L.startswith(JOe):
                     pubmed_d[PMID][1] = get_value(L)
@@ -171,13 +180,17 @@ def parse_xml(xml_path, pnames, out_log, debug=0):
             ABSTRACT += L            
             if debug:
                 print("--> AB populate")
+        # 11/18/21: Some abstract has XML tag that does not have end tag. E.g.,
+        # in 32271890, <AbstractText Label="Conclusions"/>. Fix get_value().
         elif L == ABe and flag_AB == 1:
+            if debug:
+                print("--> AB end tag", flag_AB)
+                print("--> AB:", [ABSTRACT])
             pubmed_d[PMID][2] = get_value(ABSTRACT)
+            # reset values
             flag_AB = 0
             ABSTRACT = ""
-            if debug:
-                print("--> AB end tag")
-                print("--> AB:",pubmed_d[PMID][2][:30],"...")
+
         # Deal with date
         elif L.startswith(DA):
             if debug:
@@ -224,7 +237,7 @@ def parse_xml(xml_path, pnames, out_log, debug=0):
     return pubmed_d
 
 # Rid of the tags
-def get_value(L):
+def get_value(L, debug=0):
     # Get the 1st chuck of text 
     tag1_L_b = L.find("<")  # beginning html tag, Left, beginning
     tag1_L_e = L.find(">")  # beginning html tag, Left, ending
@@ -238,14 +251,32 @@ def get_value(L):
     L2 = L[tag1_L_e+1 : tag1_R_b]
     L3 = L[tag1_R_b:]
     tag1_R_e = L3.find(">") # beginning html tag, Right, ending
-    L3 = L3[tag1_R_e+1:]
+    if debug:
+        print("L1:",L1)
+        print("L2:",L2)
+        print("L3:",L3)
+        print("tag1_R_e:",tag1_R_e)
     
-    L = L1 + L2 + L3
-    
-    # Check if there is more tag, if so, run the function again
-    if len(L.split("<")) > 1:
-        L = get_value(L)
+    # 11/18/21: This enters an infitnit loop in the recusrive part if the line
+    # contain tag that is just by itself: E.g.,
+    #  <AbstractText Label="Results"/>
+    #  <AbstractText Label="Conclusions"/>
+    # This happens in 32271890, so this if statement is find situation where L3
+    # is ">", then L2 must be such tag.
+    if tag1_R_e != 0:
+        L3 = L3[tag1_R_e+1:]
         
+        L = L1 + L2 + L3
+        
+        # Check if there is more tag, if so, run the function again
+        if len(L.split("<")) > 1:
+            if debug:
+                print("--> recusive:",len(L.split("<")),"\n")
+            L = get_value(L)
+    else:
+        L = L1
+    
+    
     return L
 
 # For: Read names for the name files with both NCBI taxnomy and USDA entries.
@@ -340,3 +371,12 @@ pnames_path = Path(args.pnames_path)
 pnames = read_plant_names(pnames_path)
 
 iterate_xmls(xmls_path, pnames)
+
+
+
+''' # For debugging get_value()
+
+ABSTRACT = '<AbstractText Label="Purpose">Purpose The role of endothelial Yes-associated protein 1 (YAP) in the pathogenesis of retinal angiogenesis and the astrocyte network in the mouse oxygen-induced retinopathy (OIR) model is unknown.</AbstractText><AbstractText Label="Methods">For in vivo studies, OIR was induced in conditional endothelial YAP knockout mice and their wild-type littermates. Retinal vascularization and the astrocyte network were evaluated by whole-mount fluorescence and Western blotting. In vitro experiments were performed in astrocytes cultured with human microvascular endothelial cell-1-conditioned medium to analyze the mechanisms underlying the effect of endothelial YAP on astrocytes.</AbstractText><AbstractText Label="Results"/><AbstractText Label="Conclusions"/>'
+
+print(get_value(ABSTRACT))
+'''
