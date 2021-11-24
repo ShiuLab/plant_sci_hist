@@ -1,12 +1,11 @@
 # 11/23/21
 
-## General consideration of what info to get out of the pubmed records
+## Consolidate qualified pubmed plant science records
 
-The goal is to build a temporal network where:
-- the nodes are plant science related keywords
+cat pubmed/0000/*tsv pubme
+d/0200/*tsv pubmed/0400/*tsv pubmed/0600/*tsv pubmed/0800/*tsv pubmed/1000/*tsv > pubmed_qualified.tsv
 
-
-
+1497544 records.
 
 # 11/17/21
 
