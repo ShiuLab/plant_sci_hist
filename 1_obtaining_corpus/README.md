@@ -1,3 +1,17 @@
+# 11/25/21
+
+## Also tried to get a more limited set of pubmed record by doing targeted search.
+
+First start with only JA related papers.
+
+python ~/doc/github/Plant_science_history/1_obtaining_corpus/script_get_abs_for_term.py -q "Jasmonic acid"+OR+Jasmonate+OR+JA -e shius@msu.edu -o JA
+
+# 11/24/21
+
+## Revise plant name list
+
+The retrieved records contains a large number of false positives due to the presence of names that are too common (e.g., rose), ambiguous (doublet, Glycine), or non-specific (e.g., soybean in soybean trypsin inhibitor). So depend on the purpose, this can be an issue.
+
 # 11/23/21
 
 ## Consolidate qualified pubmed plant science records
