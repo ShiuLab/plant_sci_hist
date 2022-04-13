@@ -1,3 +1,7 @@
+# 02/21/22
+
+Pick things back up. Rename directory to `plant_sci_hist`.
+
 # 11/25/21
 
 ## Also tried to get a more limited set of pubmed record by doing targeted search.
