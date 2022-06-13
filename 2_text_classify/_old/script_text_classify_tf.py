@@ -236,7 +236,6 @@ def run_pipeline(work_dir, X_train, y_train, X_test, y_test, param, txt_flag):
     param_str  = \
         f"{int(param[0])}-{'|'.join(map(str,param[1]))}-{param[2]}-{param[3]}"
 
-    param_str  = '-'.join(map(str, param))
     model_name = work_dir / f'model_{txt_flag}_{param_str}.sav'
     joblib.dump(best_est, model_name)
 

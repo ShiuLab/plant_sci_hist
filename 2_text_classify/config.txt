@@ -1,0 +1,32 @@
+# Define the type of model: tf or tf-idf
+lang_model="tf-idf"
+
+## For setting up input/output
+#  Project directory path
+proj_dir='/home/shius/projects/plant_sci_hist'
+#  Working directory name
+work_dir='2_text_classify'
+#  Output from script_text_preprocess.ipynb
+corpus_combo_file='corpus_combo'
+
+## For reproducibility
+rand_state=20220609
+
+## For vetorizer
+#  max_features: maximum number of terms to consider in the vocab
+#  ngram_range: inclusive range
+vec_param={"max_features": [1e3, 1e4],"ngram_range": [(1,1),(1,2)]}
+
+## For feature selection
+#  Threshold for defining features with signficiant chi-square test stat
+p_threshold=1e-4
+
+## For xgboost
+#  xgboost hyperparameters
+xg_param={'min_child_weight':[1,5,10],'gamma':[0.5,1,1.5,2,5],'subsample':[0.6,0.8,1.0],'colsample_bytree':[0.6,0.8,1.0],'max_depth':[3,4,5]}
+#  cross-validation folds
+n_splits=5
+#  number of parameter combinations to examine
+xg_param_comb=5
+#  number of jobs
+n_jobs=12
