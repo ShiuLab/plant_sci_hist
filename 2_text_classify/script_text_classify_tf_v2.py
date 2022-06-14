@@ -11,9 +11,6 @@ original corpus or cleaned one.
   are not considered. The results are in the _run_stop_p folder in work_dir.
 '''
 
-## For reproducibility
-rand_state = 20220609
-
 ## for data
 import argparse
 import json

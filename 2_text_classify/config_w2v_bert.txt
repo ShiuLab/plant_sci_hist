@@ -1,0 +1,27 @@
+# Define the type of model: w2v or bert
+lang_model="w2v"
+
+## For setting up input/output
+#  Project directory path
+proj_dir='/home/shius/projects/plant_sci_hist'
+#  Working directory name
+work_dir='2_text_classify'
+#  Output from script_text_preprocess.ipynb
+corpus_combo_file='corpus_combo'
+
+## For reproducibility
+rand_state=20220609
+
+## For w2v model
+min_count=[5,10,20]
+window=[2,5,8]
+
+## For xgboost
+#  xgboost hyperparameters
+xg_param={'min_child_weight':[1,5,10],'gamma':[0.5,1,1.5,2,5],'subsample':[0.6,0.8,1.0],'colsample_bytree':[0.6,0.8,1.0],'max_depth':[3,4,5]}
+#  cross-validation folds
+n_splits=5
+#  number of parameter combinations to examine
+xg_param_comb=5
+#  number of jobs
+n_jobs=12
