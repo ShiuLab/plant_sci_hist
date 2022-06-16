@@ -9,12 +9,9 @@ import argparse
 import json
 import pandas as pd
 import numpy as np
-import joblib
 import pickle
 import sys
 import itertools
-import matplotlib.pyplot as plt
-import seaborn as sns
 from pathlib import Path
 
 from sklearn import model_selection, metrics
@@ -23,9 +20,7 @@ from sklearn import model_selection, metrics
 import gensim
 
 ## for deep learning
-from tensorflow import keras
-from tensorflow.keras import models, layers, callbacks
-import tensorflow_addons as tfa
+from tensorflow.keras import models, layers, callbacks, preprocessing
 
 def read_configs(config_file):
   """Read configuration file and return a config_dict"""
@@ -136,17 +131,21 @@ def get_ngram(X_train, X_valid, X_test, ngram):
 
   if ngram == 1:
     return uni_train, uni_valid, uni_test
+  # ngram >1
   else:
+    # Get bigrams
     bigrams_detector  = gensim.models.phrases.Phrases(
                           uni_train, delimiter=" ", min_count=5, threshold=10)
     bigrams_detector  = gensim.models.phrases.Phraser(bigrams_detector)
+    bi_train = list(bigrams_detector[uni_train])
+    bi_valid = list(bigrams_detector[uni_valid])
+    bi_test  = list(bigrams_detector[uni_test])
 
+    # Return bigrams
     if ngram == 2:
-      bi_train = list(bigrams_detector[uni_train])
-      bi_valid = list(bigrams_detector[uni_valid])
-      bi_test  = list(bigrams_detector[uni_test])
       return bi_train, bi_valid, bi_test
 
+    # Get trigrams and return them
     elif ngram == 3:
       trigrams_detector = gensim.models.phrases.Phrases(
                           bigrams_detector[uni_train], delimiter=" ", 
@@ -201,7 +200,9 @@ def train_tokenizer(corpus):
   '''
 
   # intialize tokenizer
-  tokenizer = keras.preprocessing.text.Tokenizer(lower=True, split=' ', 
+  # See: https://www.tensorflow.org/api_docs/python/tf/keras/layers/TextVectorization
+  # This is replaced by tf.keras.layers.TextVectorization
+  tokenizer = preprocessing.text.Tokenizer(lower=True, split=' ', 
                 oov_token="NaN", filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n')
 
   # tokenize corpus 
@@ -219,7 +220,7 @@ def get_embeddings(corpus, model_w2v, tokenizer, dic_vocab_token):
   lst_text2seq = tokenizer.texts_to_sequences(corpus)
 
   # pad or trucate sequence
-  X_w2v = keras.preprocessing.sequence.pad_sequences(
+  X_w2v = preprocessing.sequence.pad_sequences(
                     lst_text2seq,      # List of sequences, each a list of ints 
                     maxlen=500,        # maximum length of all sequences
                     padding="post",    # 'pre' or 'post' 

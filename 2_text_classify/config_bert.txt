@@ -1,5 +1,5 @@
-# Define the type of model: w2v
-lang_model="w2v"
+# Define the type of model: bert 
+lang_model="bert"
 
 ## For setting up input/output
 
@@ -16,5 +16,5 @@ corpus_combo_file='corpus_combo'
 ## For reproducibility
 rand_state=20220609
 
-## For w2v model
-w2v_param={'min_count':[5,10,20],'window':[8],'ngram':[1,2,3]}
+## For bert model
+bert_param={}
