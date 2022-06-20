@@ -1,6 +1,8 @@
 '''
 For creating Word2Vec embedding-based text classification model
 
+6/18/22 [Shiu] When getting bi and trigrams, min_count was hard coded to 5,
+        instead of using the config file values. Rerun.
 6/15/22 Created by Shiu.
 '''
 
@@ -106,8 +108,7 @@ def get_hyperparameters(w2v_param):
   Args:
     param (dict): a dictionary specified in the config.txt file.
   Return:
-    param_list (list): a nested list of hyperparameters in the order of
-      max_feature, ngram_range, and p_threshold
+    param_list (list): a nested list of hyperparameters 
   '''
   print(w2v_param)
   keys, values = zip(*w2v_param.items())
@@ -123,7 +124,7 @@ def get_unigram(corpus):
 
   return unigram
 
-def get_ngram(X_train, X_valid, X_test, ngram):
+def get_ngram(X_train, X_valid, X_test, ngram, min_count):
 
   uni_train = get_unigram(X_train)
   uni_valid = get_unigram(X_valid)
@@ -135,7 +136,7 @@ def get_ngram(X_train, X_valid, X_test, ngram):
   else:
     # Get bigrams
     bigrams_detector  = gensim.models.phrases.Phrases(
-                          uni_train, delimiter=" ", min_count=5, threshold=10)
+                    uni_train, delimiter=" ", min_count=min_count, threshold=10)
     bigrams_detector  = gensim.models.phrases.Phraser(bigrams_detector)
     bi_train = list(bigrams_detector[uni_train])
     bi_valid = list(bigrams_detector[uni_valid])
@@ -148,8 +149,8 @@ def get_ngram(X_train, X_valid, X_test, ngram):
     # Get trigrams and return them
     elif ngram == 3:
       trigrams_detector = gensim.models.phrases.Phrases(
-                          bigrams_detector[uni_train], delimiter=" ", 
-                          min_count=5, threshold=10)
+                      bigrams_detector[uni_train], delimiter=" ", 
+                      min_count=min_count, threshold=10)
       trigrams_detector = gensim.models.phrases.Phraser(trigrams_detector)
       tri_train = list(trigrams_detector[bi_train])
       tri_valid = list(trigrams_detector[bi_valid])
@@ -169,7 +170,7 @@ def get_w2v_model(X_train, X_valid, X_test, param, rand_state):
   [min_count, window, ngram] = param
 
   ngram_train, ngram_valid, ngram_test = get_ngram(X_train, X_valid, X_test, 
-                                                  ngram)
+                                                  ngram, min_count)
 
   # Check if w2v model is already generated
   model_w2v_name = work_dir / f"model_cln_w2v_{min_count}-{window}-{ngram}"

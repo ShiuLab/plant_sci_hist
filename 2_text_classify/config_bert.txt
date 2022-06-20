@@ -16,5 +16,14 @@ corpus_combo_file='corpus_combo'
 ## For reproducibility
 rand_state=20220609
 
+## tokenizer vocab size
+vocab_size=52_000
+
+# maximum sequence length
+max_length=512
+
+# min word frequency
+min_frequency=2
+
 ## For bert model
 bert_param={}
