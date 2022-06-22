@@ -63,6 +63,15 @@ def read_configs(config_file):
   return config_dict
 
 
+def write_df_as_json(df, file_name):
+  json_file_name = work_dir / file_name
+
+  if not json_file_name.is_file():
+    json_file = df.to_json()
+    with json_file_name.open("w+") as f:
+      json.dump(json_file, f)
+
+
 def split_train_validate_test(corpus_combo_file, rand_state):
   '''Load data and split train, validation, test subsets for the cleaned texts
   Args:
@@ -88,6 +97,12 @@ def split_train_validate_test(corpus_combo_file, rand_state):
   # Split train validate
   train, valid = model_selection.train_test_split(train, 
       test_size=0.25, stratify=train['label'], random_state=rand_state)
+
+  # Output train, valid, and test sets as jsons
+  print("  write train, valid, test data to json")
+  write_df_as_json(train, "corpus_train.json")
+  write_df_as_json(valid, "corpus_valid.json")
+  write_df_as_json(test , "corpus_test.json")
 
   X_train = train['txt_clean']
   X_valid = valid['txt_clean']
@@ -124,43 +139,63 @@ def get_unigram(corpus):
 
   return unigram
 
-def get_ngram(X_train, X_valid, X_test, ngram, min_count):
+def get_ngram(X_corpus, ngram, min_count, subset):
+  '''Check if ngrams files exisit, if not get ngrams based on passed parameters
+  Args:
+    X_corpus (pandas series): texts to get ngrams from
+    ngram (int): uni (1), bi (2), or tri (3) grams
+    min_count (int): minmumal number of term occurence in corpus
+    subset (str): train, valid, or test; for file name
+  Output:
+    ngram_file (pickle): model_cln_ngrams_{subset}_{min_count}-{ngram}
+  Return:
+    unigrams, bigrams, or trigrams
+  '''
 
-  uni_train = get_unigram(X_train)
-  uni_valid = get_unigram(X_valid)
-  uni_test  = get_unigram(X_test)
+  # Check if ngram file exist
+  ngram_file = work_dir / f"model_cln_ngrams_{subset}_{min_count}-{ngram}"
+  if ngram_file.is_file():
+    print("    load ngrams")
+    with open(ngram_file, "rb") as f:
+        ngrams = pickle.load(f)
+    return ngrams
 
-  if ngram == 1:
-    return uni_train, uni_valid, uni_test
-  # ngram >1
   else:
-    # Get bigrams
-    bigrams_detector  = gensim.models.phrases.Phrases(
-                    uni_train, delimiter=" ", min_count=min_count, threshold=10)
-    bigrams_detector  = gensim.models.phrases.Phraser(bigrams_detector)
-    bi_train = list(bigrams_detector[uni_train])
-    bi_valid = list(bigrams_detector[uni_valid])
-    bi_test  = list(bigrams_detector[uni_test])
+    # ngrams file does not exist, generate it
+    print("    generate ngrams")
+    ngrams   = ""
 
-    # Return bigrams
-    if ngram == 2:
-      return bi_train, bi_valid, bi_test
-
-    # Get trigrams and return them
-    elif ngram == 3:
-      trigrams_detector = gensim.models.phrases.Phrases(
-                      bigrams_detector[uni_train], delimiter=" ", 
-                      min_count=min_count, threshold=10)
-      trigrams_detector = gensim.models.phrases.Phraser(trigrams_detector)
-      tri_train = list(trigrams_detector[bi_train])
-      tri_valid = list(trigrams_detector[bi_valid])
-      tri_test  = list(trigrams_detector[bi_test])
-      return tri_train, tri_valid, tri_test
-    
+    unigrams = get_unigram(X_corpus)
+    if ngram == 1:
+      ngrams = unigrams
+    # ngram >1
     else:
-      print('ERR: ngram cannot be larger than 3. QUIT!')
-      sys.exit(0)
+      # Get bigrams
+      bigrams_detector  = gensim.models.phrases.Phrases(
+                      unigrams, delimiter=" ", min_count=min_count, threshold=10)
+      bigrams_detector  = gensim.models.phrases.Phraser(bigrams_detector)
+      bigrams = list(bigrams_detector[unigrams])
 
+      # Return bigrams
+      if ngram == 2:
+        ngrams = bigrams
+      # Get trigrams and return them
+      elif ngram == 3:
+        trigrams_detector = gensim.models.phrases.Phrases(
+                        bigrams_detector[unigrams], delimiter=" ", 
+                        min_count=min_count, threshold=10)
+        trigrams_detector = gensim.models.phrases.Phraser(trigrams_detector)
+        trigrams = list(trigrams_detector[bigrams])
+        ngrams = trigrams
+      else:
+        print('ERR: ngram cannot be larger than 3. QUIT!')
+        sys.exit(0)
+
+      # write ngram file
+      with open(ngram_file, "wb") as f:
+          pickle.dump(ngrams, f)      
+
+      return ngrams
 
 def get_w2v_model(X_train, X_valid, X_test, param, rand_state):
   '''Get ngram lists and w2v model
@@ -169,18 +204,22 @@ def get_w2v_model(X_train, X_valid, X_test, param, rand_state):
   '''
   [min_count, window, ngram] = param
 
-  ngram_train, ngram_valid, ngram_test = get_ngram(X_train, X_valid, X_test, 
-                                                  ngram, min_count)
+  print("    ngrams for training")
+  ngram_train = get_ngram(X_train, ngram, min_count, "train") 
+  print("    ngrams for validation")
+  ngram_valid = get_ngram(X_valid, ngram, min_count, "valid")
+  print("    ngrams for testing")
+  ngram_test  = get_ngram(X_test , ngram, min_count, "test")
 
   # Check if w2v model is already generated
   model_w2v_name = work_dir / f"model_cln_w2v_{min_count}-{window}-{ngram}"
 
   if model_w2v_name.is_file():
-    print("  load the w2v model")
+    print("   load the w2v model")
     with open(work_dir / model_w2v_name, "rb") as f:
         model_w2v = pickle.load(f)
   else:
-    print("  geneate and save w2v model")
+    print("   geneate and save w2v model")
     model_w2v = gensim.models.Word2Vec(ngram_train, vector_size=300, 
                                       window=window, min_count=min_count, 
                                       sg=1, epochs=30, seed=rand_state)
@@ -191,10 +230,11 @@ def get_w2v_model(X_train, X_valid, X_test, param, rand_state):
   return model_w2v, model_w2v_name, ngram_train, ngram_valid, ngram_test
 
 
-def train_tokenizer(corpus):
+def train_tokenizer(corpus, param):
   '''Train a tokenizer
   Args:
     corpus (list): a nested list of word lists
+    param (list): for tokenizer and vocab output file names
   Return:
     tokenizer (keras.preprocessing.text.Tokenizer): trained tokenizer
     dic_vocab_token (dict): token as key, index as value
@@ -211,6 +251,19 @@ def train_tokenizer(corpus):
 
   # get token dictionary, with token as key, index number as value
   dic_vocab_token = tokenizer.word_index
+
+  # Save tokenizer and vocab
+  [min_count, window, ngram] = param
+  tok_name   = work_dir / f"model_cln_w2v_token_{min_count}-{window}-{ngram}"
+  vocab_name = work_dir / f"model_cln_w2v_vocab_{min_count}-{window}-{ngram}"
+
+  if not tok_name.is_file():
+    with open(tok_name, "wb") as f:
+      pickle.dump(tokenizer, f)
+
+  if not vocab_name.is_file():
+    with open(vocab_name, "wb") as f:
+      pickle.dump(dic_vocab_token, f)
 
   return tokenizer, dic_vocab_token
 
@@ -325,7 +378,7 @@ def run_pipeline(param, subsets):
   
   # Train tokenizer
   print("  train tokenizer")
-  tokenizer, dic_vocab_token = train_tokenizer(ngram_train)
+  tokenizer, dic_vocab_token = train_tokenizer(ngram_train, param)
 
   # Get embeddings
   print("  get embeddings")
@@ -360,18 +413,40 @@ def run_pipeline(param, subsets):
                             validation_data=(X_valid_w2v, y_valid), 
                             callbacks=[callback_es, callback_mcp])
 
-  print("  get validation f1 score")
-  y_valid_pred_prob = model_emb.predict(X_valid_w2v)
-  dic_y_mapping = {n:label for n,label in enumerate(np.unique(y_valid))}
-  y_valid_pred = [dic_y_mapping[np.argmax(pred)] for pred in y_valid_pred_prob]
-  best_score = metrics.f1_score(y_valid, y_valid_pred)
-  print("    ", best_score)
+  def predict_and_output(corpus_pred_file, X_w2v, X, y):
 
-  print("  get testing f1 score")
-  y_test_pred_prob = model_emb.predict(X_test_w2v)
-  dic_y_mapping = {n:label for n,label in enumerate(np.unique(y_test))}
-  y_test_pred = [dic_y_mapping[np.argmax(pred)] for pred in y_test_pred_prob]
-  test_score = metrics.f1_score(y_test, y_test_pred)
+    # prediction probability
+    print("    get prediction probability")
+    y_prob  = model_emb.predict(X_w2v)
+    # label mapping
+    y_map   = {n:label for n,label in enumerate(np.unique(y))}
+    # prediction
+    print("    get predictions")
+    y_pred  = [y_map[np.argmax(pred)] for pred in y_prob]
+    # dataframe with everything
+    print("    write prediciton dataframe")
+    pred_df = pd.DataFrame([y, y_pred, y_prob, X],
+                           ['y', "y_pred", "y_prob", "X"])
+    pred_df.to_csv(corpus_pred_file, sep="\t")
+
+    return y_pred
+
+  print("  output predictions of training data")
+  train_pred_file = work_dir / "corpus_train_pred"
+  predict_and_output(train_pred_file, X_train_w2v, X_train, y_train)
+
+  print("  output validation predictions and f1 score")
+  valid_pred_file = work_dir / "corpus_valid_pred"
+  y_valid_pred    = predict_and_output(valid_pred_file, X_valid_w2v, X_valid, 
+                                       y_valid)
+  valid_score     = metrics.f1_score(y_valid, y_valid_pred)
+  print("    ", valid_score)
+
+  print("  output test predictions and f1 score")
+  test_pred_file = work_dir / "corpus_test_pred"
+  y_test_pred    = predict_and_output(test_pred_file, X_test_w2v, X_test, 
+                                      y_test)
+  test_score     = metrics.f1_score(y_valid, y_valid_pred)
   print("    ", test_score)
 
   # provide some space between runs
@@ -381,25 +456,25 @@ def run_pipeline(param, subsets):
 
 ################################################################################
 
+if __name__ == "__main__":
+  argparser = argparse.ArgumentParser()
+  argparser.add_argument('-c', '--config',
+                        help='Configuration file', required=True)
+  args = argparser.parse_args()
 
-argparser = argparse.ArgumentParser()
-argparser.add_argument('-c', '--config',
-                      help='Configuration file', required=True)
-args = argparser.parse_args()
+  config_file = Path(args.config)
 
-config_file = Path(args.config)
+  print("\nRead configuration file...")
+  config_dict = read_configs(config_file)
 
-print("\nRead configuration file...")
-config_dict = read_configs(config_file)
+  # Declare config parameters as global variables
+  proj_dir          = Path(config_dict['proj_dir'])
+  work_dir          = proj_dir / config_dict['work_dir']
+  corpus_combo_file = work_dir / config_dict['corpus_combo_file']
+  lang_model        = config_dict['lang_model']
+  rand_state        = config_dict['rand_state']
+  w2v_param         = config_dict['w2v_param']
 
-# Declare config parameters as global variables
-proj_dir          = Path(config_dict['proj_dir'])
-work_dir          = proj_dir / config_dict['work_dir']
-corpus_combo_file = work_dir / config_dict['corpus_combo_file']
-lang_model        = config_dict['lang_model']
-rand_state        = config_dict['rand_state']
-w2v_param         = config_dict['w2v_param']
-
-run_main_function()
+  run_main_function()
 
 
