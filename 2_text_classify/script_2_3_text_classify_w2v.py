@@ -1,9 +1,11 @@
 '''
 For creating Word2Vec embedding-based text classification model
 
+6/30/22 [Shiu] Saving major files that require substantial run time to help
+        with reruns.
 6/18/22 [Shiu] When getting bi and trigrams, min_count was hard coded to 5,
         instead of using the config file values. Rerun.
-6/15/22 Created by Shiu.
+6/15/22 Created by Shin-Han Shiu.
 '''
 
 ## for data
@@ -338,6 +340,40 @@ def get_w2v_emb_model(embeddings):
 
   return model
 
+def predict_and_output(model_emb, corpus_pred_file, X_w2v, X, y):
+
+  # prediction probability
+  print("    get prediction probability")
+  y_prob  = model_emb.predict(X_w2v)
+
+  # label mapping
+  y_map   = {n:label for n,label in enumerate(np.unique(y))}
+  # prediction
+  print("    get predictions")
+  #y_pred  = pd.Series([y_map[np.argmax(pred)] for pred in y_prob])
+  y_pred  = [y_map[np.argmax(pred)] for pred in y_prob]
+
+  # Convert y_prob to series. There are probabilities for two classes. Take
+  # the column with class=1 (2nd column)
+  y_prob_series = pd.Series(y_prob[:,1], index=y.index)
+
+  # convert y_pred to series
+  y_pred_series = pd.Series(y_pred, index=y.index)
+
+  # dataframe with everything
+  pred_df = pd.DataFrame({'y': y, 
+                          'y_pred': y_pred_series, 
+                          'y_prob': y_prob_series, 
+                          'X':X})
+
+  print("    write prediciton dataframe")
+  pred_df.to_csv(corpus_pred_file, sep="\t")
+
+  score = metrics.f1_score(y, y_pred)
+  print("    F1=", score)
+
+  return score
+
 
 def run_main_function():
 
@@ -415,52 +451,19 @@ def run_pipeline(param, subsets):
                             validation_data=(X_valid_w2v, y_valid), 
                             callbacks=[callback_es, callback_mcp])
 
-  def predict_and_output(corpus_pred_file, X_w2v, X, y):
-
-    # prediction probability
-    print("    get prediction probability")
-    y_prob  = model_emb.predict(X_w2v)
-    #print(y_prob.shape) # has two columns
-
-    # label mapping
-    y_map   = {n:label for n,label in enumerate(np.unique(y))}
-    # prediction
-    print("    get predictions")
-    y_pred  = pd.Series([y_map[np.argmax(pred)] for pred in y_prob])
-
-    # convert y_prob column index=1 to pandas series
-    y_prob_1= pd.Series(y_prob[:,1])
-
-    # get values from X otherwise the index does not match
-    X_idx   = pd.Series(X.index)
-    X_val   = pd.Series(X.value)
-
-    # dataframe with everything
-    pred_df = pd.DataFrame({'y': y, "y_pred": y_pred, "y_prob": y_prob_1, 
-                            "X_idx":X_idx, "X_val": X_val})
-
-    print("    write prediciton dataframe")
-    pred_df.to_csv(corpus_pred_file, sep="\t")
-
-    return y_pred
-
   print("  output predictions of training data")
   train_pred_file = work_dir / "corpus_train_pred"
-  predict_and_output(train_pred_file, X_train_w2v, X_train, y_train)
+  predict_and_output(model_emb, train_pred_file, X_train_w2v, X_train, y_train)
 
   print("  output validation predictions and f1 score")
   valid_pred_file = work_dir / "corpus_valid_pred"
-  y_valid_pred    = predict_and_output(valid_pred_file, X_valid_w2v, X_valid, 
-                                       y_valid)
-  valid_score     = metrics.f1_score(y_valid, y_valid_pred)
-  print("    ", valid_score)
+  valid_score = predict_and_output(
+                     model_emb, valid_pred_file, X_valid_w2v, X_valid, y_valid)
 
   print("  output test predictions and f1 score")
   test_pred_file = work_dir / "corpus_test_pred"
-  y_test_pred    = predict_and_output(test_pred_file, X_test_w2v, X_test, 
-                                      y_test)
-  test_score     = metrics.f1_score(y_test, y_test_pred)
-  print("    ", test_score)
+  test_score = predict_and_output(
+                     model_emb, test_pred_file, X_test_w2v, X_test, y_test)
 
   # provide some space between runs
   print('\n')
