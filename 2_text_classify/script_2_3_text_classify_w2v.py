@@ -139,13 +139,15 @@ def get_unigram(corpus):
 
   return unigram
 
-def get_ngram(X_corpus, ngram, min_count, subset):
+def get_ngram(X_corpus, ngram, min_count, subset, work_dir):
   '''Check if ngrams files exisit, if not get ngrams based on passed parameters
   Args:
     X_corpus (pandas series): texts to get ngrams from
     ngram (int): uni (1), bi (2), or tri (3) grams
     min_count (int): minmumal number of term occurence in corpus
     subset (str): train, valid, or test; for file name
+    work_dir (Path): does not really need this for call within this script, but
+      if called as module, this needs to be passed. So make this required.
   Output:
     ngram_file (pickle): model_cln_ngrams_{subset}_{min_count}-{ngram}
   Return:
@@ -205,11 +207,11 @@ def get_w2v_model(X_train, X_valid, X_test, param, rand_state):
   [min_count, window, ngram] = param
 
   print("    ngrams for training")
-  ngram_train = get_ngram(X_train, ngram, min_count, "train") 
+  ngram_train = get_ngram(X_train, ngram, min_count, "train", work_dir) 
   print("    ngrams for validation")
-  ngram_valid = get_ngram(X_valid, ngram, min_count, "valid")
+  ngram_valid = get_ngram(X_valid, ngram, min_count, "valid", work_dir)
   print("    ngrams for testing")
-  ngram_test  = get_ngram(X_test , ngram, min_count, "test")
+  ngram_test  = get_ngram(X_test , ngram, min_count, "test", work_dir)
 
   # Check if w2v model is already generated
   model_w2v_name = work_dir / f"model_cln_w2v_{min_count}-{window}-{ngram}"
@@ -356,10 +358,10 @@ def run_main_function():
     run_num = 0
     for param in param_list:
       print(f"\n## param: {param}")
-      best_score, model_dir, test_score = run_pipeline(param, subsets)
+      valid_score, model_dir, test_score = run_pipeline(param, subsets)
 
       f.write(f"{run_num}\tcln\t{lang_model}\t{str(param)}\t"+\
-              f"{best_score}\t{test_score}\t{model_dir}\n")
+              f"{valid_score}\t{test_score}\t{model_dir}\n")
 
       run_num += 1
 
@@ -418,15 +420,26 @@ def run_pipeline(param, subsets):
     # prediction probability
     print("    get prediction probability")
     y_prob  = model_emb.predict(X_w2v)
+    #print(y_prob.shape) # has two columns
+
     # label mapping
     y_map   = {n:label for n,label in enumerate(np.unique(y))}
     # prediction
     print("    get predictions")
-    y_pred  = [y_map[np.argmax(pred)] for pred in y_prob]
+    y_pred  = pd.Series([y_map[np.argmax(pred)] for pred in y_prob])
+
+    # convert y_prob column index=1 to pandas series
+    y_prob_1= pd.Series(y_prob[:,1])
+
+    # get values from X otherwise the index does not match
+    X_idx   = pd.Series(X.index)
+    X_val   = pd.Series(X.value)
+
     # dataframe with everything
+    pred_df = pd.DataFrame({'y': y, "y_pred": y_pred, "y_prob": y_prob_1, 
+                            "X_idx":X_idx, "X_val": X_val})
+
     print("    write prediciton dataframe")
-    pred_df = pd.DataFrame([y, y_pred, y_prob, X],
-                           ['y', "y_pred", "y_prob", "X"])
     pred_df.to_csv(corpus_pred_file, sep="\t")
 
     return y_pred
@@ -446,13 +459,13 @@ def run_pipeline(param, subsets):
   test_pred_file = work_dir / "corpus_test_pred"
   y_test_pred    = predict_and_output(test_pred_file, X_test_w2v, X_test, 
                                       y_test)
-  test_score     = metrics.f1_score(y_valid, y_valid_pred)
+  test_score     = metrics.f1_score(y_test, y_test_pred)
   print("    ", test_score)
 
   # provide some space between runs
   print('\n')
 
-  return best_score, cp_filepath, test_score
+  return valid_score, cp_filepath, test_score
 
 ################################################################################
 
