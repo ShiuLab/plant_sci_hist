@@ -450,6 +450,7 @@ def run_pipeline(param, subsets):
                             epochs=20, shuffle=True, verbose=1, 
                             validation_data=(X_valid_w2v, y_valid), 
                             callbacks=[callback_es, callback_mcp])
+    
 
   print("  output predictions of training data")
   train_pred_file = work_dir / "corpus_train_pred"
