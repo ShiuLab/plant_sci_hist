@@ -4,8 +4,8 @@ lang_model="w2v"
 ## For setting up input/output
 
 #  Project directory path
-#proj_dir='/home/shius/projects/plant_sci_hist'
-proj_dir='/home/shinhan/projects/plant_sci_hist'
+proj_dir='/home/shius/projects/plant_sci_hist'
+#proj_dir='/home/shinhan/projects/plant_sci_hist'
 
 #  Working directory name
 work_dir='2_text_classify'
