@@ -16,6 +16,7 @@ original corpus or cleaned one.
 ## for data
 import argparse
 import json
+import pickle
 import pandas as pd
 import numpy as np
 import joblib
@@ -218,6 +219,11 @@ def run_xgboost(X_train, y_train, config_dict):
 
 def run_main_function(work_dir, train, test, txt_flag, config_dict):
 
+  #write training data to files
+  print("  write training data to file for interpretation")
+  train_file = work_dir / f"corpus_train_{txt_flag}.tsv.gz"
+  train.to_csv(train_file, sep="\t", compression='gzip')
+
   # Get the training/testing corpus and labels
   if txt_flag == "ori":
     X_train = train['txt']
@@ -254,6 +260,10 @@ def run_pipeline(work_dir, X_train, y_train, X_test, y_test, param, txt_flag,
                  config_dict):
   '''Carry out the major steps'''
 
+  # For saving files
+  param_str  = \
+      f"{int(param[0])}-{'to'.join(map(str,param[1]))}-{param[2]}"
+
   # Get vectorizer and fitted X_train
   print("  extract features by fitting a vectorizer")
   lang_model = config_dict['lang_model']
@@ -267,6 +277,12 @@ def run_pipeline(work_dir, X_train, y_train, X_test, y_test, param, txt_flag,
   num_select  = len(X_names)
   print('    total selected:', num_select)
 
+  # Save the selected features
+  X_names_file = work_dir / \
+              f"corpus_{txt_flag}_{lang_model}_{param_str}_sel_featnames.json"
+  with open(X_names_file, 'w+') as f:
+      json.dump(pd.Series(X_names).to_json(), f)
+
   # Refit vectorizer with selected features and re-transform X_train
   print("  refit vectorizer with training data and transform")
   vectorizer_sel, X_train_vec_sel = extract_feat(X_train, vocab=X_names)
@@ -277,23 +293,46 @@ def run_pipeline(work_dir, X_train, y_train, X_test, y_test, param, txt_flag,
   X_test_vec_sel = vectorizer_sel.transform(X_test)
   print("    test dim:", X_test_vec_sel.shape)
 
-  # Get xgboost model and cv results
-  print("  cross-validation and tuning with xgboost")
-  rand_search = run_xgboost(X_train_vec_sel, y_train, config_dict)
+  # Save the vectorized train/test data
+  print("  save vectorizer and vectorized features")
+  vec_sel_file = work_dir / f"corpus_{txt_flag}_{lang_model}_{param_str}_vec_sel.pkl"
+  with open(vec_sel_file, 'wb') as f:
+    pickle.dump(vectorizer_sel, f)
 
-  best_est   = rand_search.best_estimator_
+  # Convert scipy sparse arrays to dataframe
+  X_train_vec_sel_df = pd.DataFrame.sparse.from_spmatrix(X_train_vec_sel, 
+                                                         columns=X_names)
+  X_test_vec_sel_df  = pd.DataFrame.sparse.from_spmatrix(X_train_vec_sel, 
+                                                         columns=X_names)
+  # Specify file names 
+  X_train_vec_sel_file = work_dir / \
+              f"corpus_{txt_flag}_{lang_model}_{param_str}_train_vec_sel.json"
+  X_test_vec_sel_file  = work_dir / \
+              f"corpus_{txt_flag}_{lang_model}_{param_str}_test_vec_sel.json"
+  # Write json files
+  with open(X_train_vec_sel_file, 'w+') as f:
+      json.dump(X_train_vec_sel_df.to_json(), f)
+  with open(X_test_vec_sel_file, 'w+') as f:
+      json.dump(X_test_vec_sel_df.to_json(), f)
+
+  # Check if model already exist
+  model_name = work_dir / f'model_{txt_flag}_{lang_model}_{param_str}.sav'
+  if model_name.is_file():
+    print("  load existing model")
+    rand_search = joblib.load(model_name)
+  else:
+    # Get xgboost model and cv results
+    print("  cross-validation and tuning with xgboost")
+    rand_search = run_xgboost(X_train_vec_sel, y_train, config_dict)
+    # Save the best model
+    print("  save model")
+    best_est = rand_search.best_estimator_
+    joblib.dump(best_est, model_name)
+
   best_param = rand_search.best_params_
   best_score = rand_search.best_score_
   print("    best F1:", best_score)
   print("    best param:", best_param)
-
-  # Save the best model
-  print ("  save model")
-  param_str  = \
-      f"{int(param[0])}-{'to'.join(map(str,param[1]))}-{param[2]}"
-
-  model_name = work_dir / f'model_{txt_flag}_{param_str}.sav'
-  joblib.dump(best_est, model_name)
 
   # Get testing results: This is not for tuning/selection purpose but because
   # X_test is transformed by vectorizer for each parameter combination. If
