@@ -2,6 +2,8 @@
 For building text classification model based on tf and tf-idf using either
 original corpus or cleaned one.
 
+07/02/22 [Shiu]: When trying to interpret the saved model, run into issue
+  loading the joblib .save files. 
 06/13/22 [Shiu]: Create config.txt and set up all config info in the file.
   Also, realized that some global variables need not to be passed around (e.g.,
   config_dict). But did not fix that.
@@ -70,7 +72,7 @@ def read_configs(config_file):
   return config_dict
 
 
-def split_train_test(corpus_combo_file):
+def split_train_test(corpus_combo_file, rand_state):
   '''Load data and split train test
   Args:
     corpus_combo_file (str): path to the json data file
@@ -309,31 +311,33 @@ def run_pipeline(work_dir, X_train, y_train, X_test, y_test, param, txt_flag,
 
 ################################################################################
 
-argparser = argparse.ArgumentParser()
-argparser.add_argument('-c', '--config',
-                      help='Configuration file', required=True)
-args = argparser.parse_args()
+if __name__ == "__main__":
+  argparser = argparse.ArgumentParser()
+  argparser.add_argument('-c', '--config',
+                        help='Configuration file', required=True)
+  args = argparser.parse_args()
 
-print("\nRead configuration file...")
-config_dict = read_configs(args.config)
+  print("\nRead configuration file...")
+  config_dict = read_configs(args.config)
 
-# Set up working directory and corpus file location
-proj_dir          = Path(config_dict['proj_dir'])
-work_dir          = proj_dir / config_dict['work_dir']
-corpus_combo_file = work_dir / config_dict['corpus_combo_file']
+  # Set up working directory and corpus file location
+  proj_dir          = Path.home() / config_dict['proj_dir']
+  work_dir          = proj_dir / config_dict['work_dir']
+  corpus_combo_file = work_dir / config_dict['corpus_combo_file']
 
-# For reproducibility
-rand_state = config_dict['rand_state']
+  # For reproducibility
+  rand_state = config_dict['rand_state']
 
-# Split train/test for original and cleaned text
-print("\nRead file and split train/test...")
-train_ori, test_ori, train_cln, test_cln = split_train_test(
-                                              corpus_combo_file, rand_state)
+  # Split train/test for original and cleaned text
+  print("\nRead file and split train/test...")
+  train_ori, test_ori, train_cln, test_cln = split_train_test(
+                                                corpus_combo_file, rand_state)
 
-print("\nRun main function with original data...")
-run_main_function(work_dir, train_ori, test_ori, "ori", config_dict)
+  print("\nRun main function with original data...")
+  run_main_function(work_dir, train_ori, test_ori, "ori", config_dict)
 
-print("\nRun main function with cleaned data...")
-run_main_function(work_dir, train_cln, test_cln, "cln", config_dict)
+  # Do not need to run on cleaned data
+  #print("\nRun main function with cleaned data...")
+  #run_main_function(work_dir, train_cln, test_cln, "cln", config_dict)
 
 
