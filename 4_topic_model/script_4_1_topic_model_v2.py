@@ -36,11 +36,6 @@ os.chdir(work_dir)
 dir25       = proj_dir / "2_text_classify/2_5_predict_pubmed"
 corpus_file = dir25 / "corpus_plant_421658.tsv.gz"
 
-# qualified feature names
-dir31          = proj_dir / "3_key_term_temporal/3_1_pubmed_vocab"
-X_vec_file     = dir31 / "tfidf_sparse_matrix_4542"
-feat_name_file = dir31 / "tfidf_feat_name_and_sum_4542"
-
 # Get the model name
 parser = argparse.ArgumentParser()
 parser.add_argument('model', type=str, help="Huggingface BERT model to use")
