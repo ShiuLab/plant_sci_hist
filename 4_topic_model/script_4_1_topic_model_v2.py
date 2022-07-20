@@ -1,4 +1,6 @@
 
+print("Import modules")
+
 import re, pickle, argparse, os
 import pandas as pd
 from pathlib import Path
@@ -42,6 +44,7 @@ feat_name_file = dir31 / "tfidf_feat_name_and_sum_4542"
 # Get the model name
 parser = argparse.ArgumentParser()
 parser.add_argument('model', type=str, help="Huggingface BERT model to use")
+parser.add_argument('--num_docs', type=int, help="Number of docs to use")
 args = parser.parse_args()
 model_name = args.model
 
@@ -75,18 +78,27 @@ else:
   with open(docs_clean_file, "wb") as f:
     pickle.dump(docs_clean, f)
 
+# Use a specified number of docs
+if args.num_docs != None:
+	docs_clean = docs_clean[:args.num_docs]
+print("  num_docs=", len(docs_clean))
+
 print("Run bertopic")
 print("  model=", model_name)
 
 if topic_model_file.is_file() and topics_file.is_file:
   print("  model already generated")
 else:
+  #topic_model = BERTopic(calculate_probabilities=False,
+  #                      n_gram_range=(1,2),
+  #                      min_topic_size=200, 
+  #                      nr_topics='auto',
+  #                      embedding_model=model_name,
+  #                      verbose=True)
   topic_model = BERTopic(calculate_probabilities=False,
-                        n_gram_range=(1,2),
-                        min_topic_size=1000, 
-                        nr_topics='auto',
-                        embedding_model=model_name,
-                        verbose=True)
+                         n_gram_range=(1,2),
+                         embedding_model=model_name,
+                         verbose=True)
 
   topics = topic_model.fit_transform(docs_clean)
 
