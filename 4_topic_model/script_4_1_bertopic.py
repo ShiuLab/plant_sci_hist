@@ -34,35 +34,31 @@ os.chdir(work_dir)
 dir25       = proj_dir / "2_text_classify/2_5_predict_pubmed"
 corpus_file = dir25 / "corpus_plant_421658.tsv.gz"
 
-# qualified feature names
-dir31          = proj_dir / "3_key_term_temporal/3_1_pubmed_vocab"
-X_vec_file     = dir31 / "tfidf_sparse_matrix_4542"
-feat_name_file = dir31 / "tfidf_feat_name_and_sum_4542"
-
 # output
+docs_clean_file  = work_dir / "corpus_plant_421658_proc_txt.pkl"
 topic_model_file = work_dir / "topic_model"
 topics_file      = work_dir / "topics.pickle"
 
-print("Read corpus")
+if docs_clean_file.is_file():
+  print("Load processed docs")
+  with open(docs_clean_file, "rb") as f:
+    docs_clean = pickle.load(f)
+else:
+  print("Read corpus and process docs")
+  corpus_df  = pd.read_csv(corpus_file, sep='\t', compression='gzip')
+  docs       = corpus_df['txt']
+  stop_words = stopwords.words('english')
+  stop_words_dict = {}
+  for i in stop_words:
+    stop_words_dict[i] = 1
 
-corpus_df = pd.read_csv(corpus_file, sep='\t', compression='gzip')
-corpus_df.head(2)
-
-
-print("Process docs")
-
-docs       = corpus_df['txt']
-stop_words = stopwords.words('english')
-stop_words_dict = {}
-for i in stop_words:
-  stop_words_dict[i] = 1
-
-docs_clean = []
-for doc_idx in tqdm(range(len(docs))):
-  doc = docs[doc_idx]
-  docs_clean.append(clean_text(doc, stop_words_dict))
-len(docs_clean)
-
+  docs_clean = []
+  for doc_idx in tqdm(range(len(docs))):
+    doc = docs[doc_idx]
+    docs_clean.append(clean_text(doc, stop_words_dict))
+  print("  # cleaned docs:",len(docs_clean))
+  with open(docs_clean_file, "wb") as f:
+    pickle.dump(docs_clean, f)
 
 print("Run bertopic")
 
@@ -74,7 +70,6 @@ topic_model = BERTopic(calculate_probabilities=False,
                        verbose=True)
 
 topics = topic_model.fit_transform(docs_clean)
-
 
 print("Save models and topics")
 
