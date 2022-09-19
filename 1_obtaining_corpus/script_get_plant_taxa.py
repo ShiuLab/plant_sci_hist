@@ -4,7 +4,7 @@
 # Date: 11/15/21
 # For: Getting the child taxa of a taxa from NCBI taxonomy. In this specific
 #   case, I am getting the child taxa of Viridiplantae. Script is developed in
-#   a juputer notebook: script_test_parse_pubmed_xml.ipynb.
+#   a juputer notebook: script_test_parse_xml.ipynb.
 #
 ################################################################################
 
