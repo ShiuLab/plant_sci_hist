@@ -23,18 +23,19 @@ from pathlib import Path
 #
 # Get abstract
 #
-def get_abs(qstr, email, output_name):
+def get_abs(qstr, email, output_name, retmax):
     
-    Entrez.email = args.email
+    Entrez.email = email
     batch_size   = 50
     
-    print("Retrieve:", qstr,)
     qstr = format_qstr(qstr)
-    out_xml      = open("pubmed-" + output_name, "w")
+    print("Retrieve:", qstr)
+    out_xml = open("pubmed-" + output_name, "w")
     
     handle = Entrez.esearch(db="pubmed", 
                             term=qstr,
-                            retmax="100000")
+                            sort='relevance',
+                            retmax=retmax)
     record = Entrez.read(handle)
     idlist = record["IdList"]
     epost  = Entrez.epost("pubmed", id=",".join(idlist))
@@ -75,13 +76,17 @@ parser.add_argument('-q', '--query',
     help='Query string with a format like \"Jasmonic acid\"+OR+Jasmonate+OR+JA',
     required=True)
 parser.add_argument('-e', '--email', 
-    help='Email of individual submitting the query',
-    required=True)
+    help='Email of individual submitting the query', default='anonymous',
+    required=False)
 parser.add_argument('-o', '--output_name', 
     help='Name for output file',
-    required=True)    
+    required=True)
+parser.add_argument('-r', '--ret_max', default=10000, 
+    help='Number of records to retrieve',
+    required=False)    
 args = parser.parse_args()
 
 get_abs(args.query,
         args.email,
-        args.output_name)
+        args.output_name,
+        args.ret_max)
