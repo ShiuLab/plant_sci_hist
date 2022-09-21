@@ -83,7 +83,7 @@ def get_parent_child(nodes_dmp_path):
     return parent_child 
 
 #
-# For: Get the parent-child relationships from nodes.dmp file.
+# For: Get the offspring of a parent.
 # Parameters: 
 #   p - The parent taxa ID to get children for.
 #   paren_child - The dictionary returned from get_parent_child().
