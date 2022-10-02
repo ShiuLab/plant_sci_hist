@@ -71,22 +71,23 @@ def format_qstr(qstr):
           
 #-------------------------------------------------------------------------------
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-q', '--query', 
-    help='Query string with a format like \"Jasmonic acid\"+OR+Jasmonate+OR+JA',
-    required=True)
-parser.add_argument('-e', '--email', 
-    help='Email of individual submitting the query', default='anonymous',
-    required=False)
-parser.add_argument('-o', '--output_name', 
-    help='Name for output file',
-    required=True)
-parser.add_argument('-r', '--ret_max', default=10000, 
-    help='Number of records to retrieve',
-    required=False)    
-args = parser.parse_args()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-q', '--query', 
+        help='Query string with a format like \"Jasmonic acid\"+OR+Jasmonate+OR+JA',
+        required=True)
+    parser.add_argument('-e', '--email', 
+        help='Email of individual submitting the query', default='anonymous',
+        required=False)
+    parser.add_argument('-o', '--output_name', 
+        help='Name for output file',
+        required=True)
+    parser.add_argument('-r', '--ret_max', default=10000, 
+        help='Number of records to retrieve',
+        required=False)    
+    args = parser.parse_args()
 
-get_abs(args.query,
-        args.email,
-        args.output_name,
-        args.ret_max)
+    get_abs(args.query,
+            args.email,
+            args.output_name,
+            args.ret_max)
