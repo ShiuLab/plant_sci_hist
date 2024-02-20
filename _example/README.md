@@ -9,7 +9,7 @@
 - `script_topic_model_example.ipynb`:
   - The Jupyter notebook with the codes needed to run the example.
 - `corpus_arabidopsis_16_20.tsv.gz`: 
-  - contains PubMed records with Arabidopsis in titles or abstracts from 2016 to 2020.
+  - A dataset contains PubMed records with Arabidopsis in titles or abstracts from 2016 to 2020.
   - This should be moved to `~/projects/topic_model_example` so the outputs are not generated in the repo. 
 
 ## Background knowledge needed
