@@ -6,7 +6,7 @@
 - `environment.yml`:
   - This can be used to install set up the environment.
   - Alternatively, follow the instruction within the Jupyter notebook.
-- `script_topic_over_time.ipynb`:
+- `script_topic_model_example.ipynb`:
   - The Jupyter notebook with the codes needed to run the example.
 - `corpus_arabidopsis_16_20.tsv.gz`: 
   - contains PubMed records with Arabidopsis in titles or abstracts from 2016 to 2020.
