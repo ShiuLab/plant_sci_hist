@@ -27,10 +27,10 @@
 
 The required files generated in this example can be used for further analysis. Examples include:
 
-1. UMAP clustering
-  - For generating Figure 1C, the details are in the `plant_sci_hist` repostory - `4_topic_model/script_4_6_umap.ipynb`.
-1. Topic network
-  - For generating Figure 2A, the details are in the `plant_sci_hist` repostory - `4_topic_model/script_4_3b_network_graph.ipynb`.
-1. Topic frequency over time
-  - For generating Figure 3, the details are in the `plant_sci_hist` repostory - `4_topic_model/script_4_4d_reorder_heatmap_based_on_lowess.ipynb`.
+- UMAP clustering
+  - For generating Figure 1C, the details are in `4_topic_model/script_4_6_umap.ipynb`.
+- Topic network
+  - For generating Figure 2A, the details are in `4_topic_model/script_4_3b_network_graph.ipynb`.
+- Topic frequency over time
+  - For generating Figure 3, the details are in `4_topic_model/script_4_4d_reorder_heatmap_based_on_lowess.ipynb`.
   - For ordering the topics, details are provided in the method section "Topic categories and ordering". 
