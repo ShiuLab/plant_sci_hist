@@ -16,10 +16,10 @@ This repo documents the codes used for this study and the numbers in the directo
   - Testing code for miscellaneous purposes.
 
 2. Text classify: classify candidate records to build plant science corpus
-  i. Preprocessing texts
-  ii. Text classification with Tf and Tf-Idf-based features
-  iii. Text classification with Word2Vec-based features
-  iv. Text classification with BERT-based features
+  1. Preprocessing texts
+  2. Text classification with Tf and Tf-Idf-based features
+  3. Text classification with Word2Vec-based features
+  4. Text classification with BERT-based features
     a. DistilBERT
     b. SciBERT
     c. PubMedBERT (which did not work)
