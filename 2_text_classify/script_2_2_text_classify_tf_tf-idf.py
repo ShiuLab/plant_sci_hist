@@ -302,13 +302,21 @@ def run_pipeline(work_dir, X_train, y_train, X_test, y_test, param, txt_flag,
   # Convert scipy sparse arrays to dataframe
   X_train_vec_sel_df = pd.DataFrame.sparse.from_spmatrix(X_train_vec_sel, 
                                                          columns=X_names)
-  X_test_vec_sel_df  = pd.DataFrame.sparse.from_spmatrix(X_train_vec_sel, 
-                                                         columns=X_names)
+  # 10/7/25: discovered a bug here, I passed training data instead of
+  # testing. So, not really testing the results. Ok, this is ONLY for export
+  # purpose and was not used for evaluation. In the evaluation step below,
+  # the correct testing vector sparse matrix is used. Man...
+  #X_test_vec_sel_df  = pd.DataFrame.sparse.from_spmatrix(X_train_vec_sel, 
+  #                                                       columns=X_names)
+  X_test_vec_sel_df  = pd.DataFrame.sparse.from_spmatrix(X_test_vec_sel, 
+                                                         columns=X_names) 
+
   # Specify file names 
   X_train_vec_sel_file = work_dir / \
               f"corpus_{txt_flag}_{lang_model}_{param_str}_train_vec_sel.json"
   X_test_vec_sel_file  = work_dir / \
               f"corpus_{txt_flag}_{lang_model}_{param_str}_test_vec_sel.json"
+  
   # Write json files
   with open(X_train_vec_sel_file, 'w+') as f:
       json.dump(X_train_vec_sel_df.to_json(), f)
@@ -317,17 +325,18 @@ def run_pipeline(work_dir, X_train, y_train, X_test, y_test, param, txt_flag,
 
   # Check if model already exist
   model_name = work_dir / f'model_{txt_flag}_{lang_model}_{param_str}.sav'
-  if model_name.is_file():
-    print("  load existing model")
-    rand_search = joblib.load(model_name)
-  else:
-    # Get xgboost model and cv results
-    print("  cross-validation and tuning with xgboost")
-    rand_search = run_xgboost(X_train_vec_sel, y_train, config_dict)
-    # Save the best model
-    print("  save model")
-    best_est = rand_search.best_estimator_
-    joblib.dump(best_est, model_name)
+  #if model_name.is_file():
+  #  print("  load existing model")
+  #  rand_search = joblib.load(model_name)
+  #else:
+
+  # Get xgboost model and cv results
+  print("  cross-validation and tuning with xgboost")
+  rand_search = run_xgboost(X_train_vec_sel, y_train, config_dict)
+  # Save the best model
+  print("  save model")
+  best_est = rand_search.best_estimator_
+  joblib.dump(best_est, model_name)
 
   best_param = rand_search.best_params_
   best_score = rand_search.best_score_

@@ -22,10 +22,7 @@ rand_state=20220609
 #  ngram_range: inclusive range
 
 # Setting for hyperparameter tuning
-#vec_param={"max_features": [1e3, 1e4],"ngram_range": [(1,1),(1,2)]}
-
-# 07/02/22 Setting for repeat run to get new save model
-vec_param={"max_features": [1e3],"ngram_range": [(1,2)]}
+vec_param={"max_features": [1e3, 1e4],"ngram_range": [(1,1),(1,2)]}
 
 ###################################
 ## For feature selection
